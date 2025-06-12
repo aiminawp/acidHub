@@ -60,7 +60,7 @@ local function scaleInTween(obj)
     obj.AnchorPoint = Vector2.new(0.5, 0.5)
     obj.Position = UDim2.new(0.5, -obj.Size.X.Offset / 2, 0.5, -obj.Size.Y.Offset / 2)
     obj.Size = UDim2.new(0, 0, 0, 0)
-    local tween = TweenService:Create(obj, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 300, 0, 400)})
+    local tween = TweenService:Create(obj, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 400, 0, 400)})
     tween:Play()
     tween.Completed:Wait()
 end
@@ -70,10 +70,30 @@ ScreenGui.Name = "VerticalGuiLib"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = Player:WaitForChild("PlayerGui")
 
+-- Loading Overlay
+local LoadingOverlay = Instance.new("Frame")
+LoadingOverlay.Size = UDim2.new(1, 0, 1, 0)
+LoadingOverlay.BackgroundColor3 = themes[library.Theme].BackgroundColor
+LoadingOverlay.Parent = ScreenGui
+
+local LoadingText = Instance.new("TextLabel")
+LoadingText.Size = UDim2.new(1, 0, 1, 0)
+LoadingText.BackgroundTransparency = 1
+LoadingText.Text = "Acidity UI"
+LoadingText.Font = Enum.Font.GothamBlack
+LoadingText.TextSize = 48
+LoadingText.TextColor3 = themes[library.Theme].AccentColor
+LoadingText.Parent = LoadingOverlay
+LoadingText.TextStrokeTransparency = 0
+LoadingText.TextStrokeColor3 = Color3.new(0, 0, 0)
+LoadingText.TextWrapped = true
+LoadingText.TextYAlignment = Enum.TextYAlignment.Center
+
+-- Main Frame wider (400 width)
 local MainFrame = createFrame{
     Parent = ScreenGui,
-    Size = UDim2.new(0, 300, 0, 400),
-    Position = UDim2.new(0.5, -150, 0.5, -200),
+    Size = UDim2.new(0, 400, 0, 400),
+    Position = UDim2.new(0.5, -200, 0.5, -200),
     BackgroundColor = themes[library.Theme].BackgroundColor,
     GradientColors = themes[library.Theme].GradientColors,
     RoundCorners = true,
@@ -82,7 +102,7 @@ MainFrame.Visible = false
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 
 local SectionsContainer = Instance.new("ScrollingFrame", MainFrame)
-SectionsContainer.Size = UDim2.new(1, -20, 1, -20)
+SectionsContainer.Size = UDim2.new(1, -20, 1, -60) -- leave space for bottom buttons inside MainFrame
 SectionsContainer.Position = UDim2.new(0, 10, 0, 10)
 SectionsContainer.BackgroundTransparency = 1
 SectionsContainer.ScrollBarThickness = 5
@@ -92,12 +112,13 @@ local UIListLayout = Instance.new("UIListLayout", SectionsContainer)
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Padding = UDim.new(0, 10)
 
+-- Bottom bar inside MainFrame, not ScreenGui, so buttons are inside main UI window
 local BottomBar = createFrame{
-    Parent = ScreenGui,
-    Size = UDim2.new(1, 0, 0, 40),
-    Position = UDim2.new(0, 0, 1, -40),
+    Parent = MainFrame,
+    Size = UDim2.new(1, -20, 0, 40),
+    Position = UDim2.new(0, 10, 1, -50),
     BackgroundColor = Color3.fromRGB(20, 20, 20),
-    RoundCorners = false,
+    RoundCorners = UDim.new(0, 6),
 }
 
 local function createButton(name, pos)
@@ -219,7 +240,7 @@ local function showGui()
     elseif library.Animation == "ScaleIn" then
         scaleInTween(MainFrame)
     else
-        MainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+        MainFrame.Position = UDim2.new(0.5, -200, 0.5, -200)
     end
 end
 
@@ -253,8 +274,24 @@ settingsBtn.MouseButton1Click:Connect(function()
     showGui()
 end)
 
--- Start hidden, show on pressing RightControl
+-- Hide MainFrame initially
 hideGui()
+
+-- Show loading overlay then fade out to UI
+local function fadeOutLoading()
+    local tween = TweenService:Create(LoadingOverlay, TweenInfo.new(1.5), {BackgroundTransparency = 1})
+    tween:Play()
+    tween.Completed:Wait()
+    LoadingOverlay:Destroy()
+    showGui()
+end
+
+coroutine.wrap(function()
+    wait(2) -- show overlay for 2 seconds
+    fadeOutLoading()
+end)()
+
+-- Toggle UI with RightControl
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
         if MainFrame.Visible then
