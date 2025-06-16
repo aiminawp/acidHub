@@ -1,2 +1,2 @@
-# skbidid17t87steotatuTEST
-skibdiiddy
+# ur avg script hub
+this is a test lmao
