@@ -9,6 +9,8 @@ local ScriptContext = game:GetService("ScriptContext")
 local currentTarget = nil
 local targetLockTime = 0
 local lastAimUpdate = 0
+local statusBarEnabled = false
+local statusBarFrame = nil
 
 local function DebugPrint(message)
     print("[DEBUG]: " .. tostring(message))
@@ -1052,6 +1054,26 @@ MovementSection:AddToggle("GlideToggle", {
 })
 
 -- world
+local statusBarToggle = Tabs.Modulation:AddToggle("StatusBarToggle", {
+    Title = "Show Status Bar",
+    Description = "Display FPS and ping information at the top of screen",
+    Default = false,
+})
+
+statusBarToggle:OnChanged(function(val)
+    statusBarEnabled = val
+    if val then
+        if not statusBarFrame then
+            statusBarFrame = CreateStatusBar()
+        end
+        statusBarFrame.Visible = true
+    else
+        if statusBarFrame then
+            statusBarFrame.Visible = false
+        end
+    end
+end)
+
 local WorldSection = Tabs.World:AddSection("Atmosphere")
 
 WorldSection:AddToggle("CustomAtmosphereToggle", {
@@ -1208,7 +1230,7 @@ local function cleanupScriptBeforeClosing()
 end
 
 game:GetService(coregui).ChildRemoved:Connect(function(child)
-    if child.Name == "ScreenGui" and child:FindFirstChild("Fluent") then
+    if child.Name == "ScreenGui" and child:FindFirstChild("Acid") then
         cleanupScriptBeforeClosing()
     end
 end)
