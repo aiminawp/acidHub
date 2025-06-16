@@ -1607,3 +1607,9 @@ task.spawn(function()
         if Fluent.Unloaded then break end
     end
 end)
+
+Fluent:Notify({
+    Title = "Acid",
+    Content = "Loaded Grow A Garden",
+    Duration = 2,
+})
