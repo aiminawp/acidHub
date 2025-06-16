@@ -1213,6 +1213,117 @@ game:GetService(coregui).ChildRemoved:Connect(function(child)
     end
 end)
 
+local function CreateStatusBar()
+    local RunService = game:GetService("RunService")
+    local Players = game:GetService("Players")
+    local player = Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    
+    -- screen gui
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "StatusBar"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = playerGui
+    
+    -- main frame
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 320, 0, 40)
+    frame.Position = UDim2.new(0.5, 0.5, 0, 5) -- top center
+    frame.AnchorPoint = Vector2.new(0.5, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    frame.BackgroundTransparency = 0.3
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+    
+    -- rounded corners
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(0, 8)
+    uiCorner.Parent = frame
+    
+    local accentColor = Color3.fromRGB(240, 240, 255)
+    
+    -- italic A logo
+    local aLabel = Instance.new("TextLabel")
+    aLabel.Size = UDim2.new(0, 32, 1, 0)
+    aLabel.Position = UDim2.new(0, 12, 0, 0)
+    aLabel.BackgroundTransparency = 1
+    aLabel.TextColor3 = accentColor
+    aLabel.Font = Enum.Font.SourceSansBold
+    aLabel.TextSize = 26
+    aLabel.Text = "A"
+    aLabel.TextXAlignment = Enum.TextXAlignment.Center
+    aLabel.TextYAlignment = Enum.TextYAlignment.Center
+    aLabel.Rotation = -12
+    aLabel.Parent = frame
+    
+    -- separator function
+    local function createSeparator(xPos)
+        local sep = Instance.new("Frame")
+        sep.Size = UDim2.new(0, 2, 0, 24)
+        sep.Position = UDim2.new(0, xPos, 0, 8)
+        sep.BackgroundColor3 = accentColor
+        sep.BackgroundTransparency = 0.6
+        sep.BorderSizePixel = 0
+        sep.Parent = frame
+        return sep
+    end
+    
+    createSeparator(62)
+    createSeparator(174)
+    
+    -- fps label
+    local fpsLabel = Instance.new("TextLabel")
+    fpsLabel.Size = UDim2.new(0, 100, 1, 0)
+    fpsLabel.Position = UDim2.new(0, 70, 0, 0)
+    fpsLabel.BackgroundTransparency = 1
+    fpsLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
+    fpsLabel.Font = Enum.Font.SourceSans
+    fpsLabel.TextSize = 20
+    fpsLabel.TextXAlignment = Enum.TextXAlignment.Center
+    fpsLabel.TextYAlignment = Enum.TextYAlignment.Center
+    fpsLabel.Text = "FPS: 0"
+    fpsLabel.Parent = frame
+    
+    -- ping label
+    local pingLabel = Instance.new("TextLabel")
+    pingLabel.Size = UDim2.new(0, 80, 1, 0)
+    pingLabel.Position = UDim2.new(0, 200, 0, 0)
+    pingLabel.BackgroundTransparency = 1
+    pingLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
+    pingLabel.Font = Enum.Font.SourceSans
+    pingLabel.TextSize = 20
+    pingLabel.TextXAlignment = Enum.TextXAlignment.Center
+    pingLabel.TextYAlignment = Enum.TextYAlignment.Center
+    pingLabel.Text = "Ping: 0 ms"
+    pingLabel.Parent = frame
+    
+    -- fps counter
+    local fps = 0
+    local frameCount = 0
+    local lastTime = tick()
+    
+    RunService.RenderStepped:Connect(function()
+        frameCount = frameCount + 1
+        local now = tick()
+        if now - lastTime >= 1 then
+            fps = frameCount / (now - lastTime)
+            frameCount = 0
+            lastTime = now
+            fpsLabel.Text = string.format("FPS: %d", math.floor(fps))
+        end
+    end)
+    
+    -- ping updater
+    coroutine.wrap(function()
+        while true do
+            local ping = player:GetNetworkPing() * 1000
+            pingLabel.Text = string.format("Ping: %d ms", math.floor(ping))
+            wait(1)
+        end
+    end)()
+    
+    return frame
+end
 
 Fluent:Notify({
     Title = "Acid",
