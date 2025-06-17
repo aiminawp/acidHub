@@ -13,12 +13,8 @@ local ScriptContext = game:GetService("ScriptContext")
 local currentTarget = nil
 local targetLockTime = 0
 local lastAimUpdate = 0
-local statusBarEnabled = false
-local statusBarFrame = nil
-
-local function DebugPrint(message)
-    print("[DEBUG]: " .. tostring(message))
-end
+local WatermarkEnabled = false
+local WatermarkFrame = nil
 
 local Window = Fluent:CreateWindow({
     Title = "Acid",
@@ -31,11 +27,23 @@ local Window = Fluent:CreateWindow({
 })
 
 local Tabs = {
+    Credits = Window:AddTab({ Title = "Credits" }),
     Aim = Window:AddTab({ Title = "Aim" }),
     ESP = Window:AddTab({ Title = "Esp" }),
     Misc = Window:AddTab({ Title = "Misc" }),
-    World = Window:AddTab({ Title = "Modulation" })
+    Modulation = Window:AddTab({ Title = "Modulation" })
 }
+Window:SelectTab(1)
+
+Tabs.Credits:AddParagraph({
+        Title = "Soma",
+        Content = "Improved features"
+})
+
+Tabs.Credits:AddParagraph({
+        Title = "Klyte",
+        Content = "Base script"
+})
 
 local AimbotSettings = {
     Enabled = false,
@@ -76,14 +84,9 @@ local ESPSettings = {
 }
 
 local MiscSettings = {
-    Fly = false,
-    FlySpeed = 50,
     WalkSpeed = 16,
-    NoRecoil = false,
-    RecoilAmount = 0, 
     NoSpread = false,
-    InfJump = false,
-    InfJumpPower = 20,
+    NoSpreadPower = 80, -- lower is less spread higher is more spread
     Glide = false,
     GlideSpeed = 0.9
 }
@@ -192,7 +195,7 @@ local function GetClosestPlayerToMouse()
                         local screenDistance = (mousePosition - Vector2.new(screenPoint.X, screenPoint.Y)).Magnitude
                         
                         if screenDistance <= AimbotSettings.FOVSize then
-                            if not AimbotSettings. or IsVisible(Camera.CFrame.Position, targetPart.Position, {LocalPlayer.Character, character}) then
+                            if not AimbotSettings.Enabled or IsVisible(Camera.CFrame.Position, targetPart.Position, {LocalPlayer.Character, character}) then
                                 if screenDistance < shortestDistance then
                                     closestPlayer = player
                                     shortestDistance = screenDistance
@@ -210,6 +213,118 @@ end
 
 local ESPObjects = {}
 local espUpdateCounter = 0
+
+local function CreateWatermark()
+    local RunService = game:GetService("RunService")
+    local Players = game:GetService("Players")
+    local player = Players.LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    
+    -- screen gui
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "Watermark"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = playerGui
+    
+    -- main frame
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 320, 0, 40)
+    frame.Position = UDim2.new(0.5, 0.5, 0, 5) -- top center
+    frame.AnchorPoint = Vector2.new(0.5, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    frame.BackgroundTransparency = 0.3
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+    
+    -- rounded corners
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(0, 8)
+    uiCorner.Parent = frame
+    
+    local accentColor = Color3.fromRGB(240, 240, 255)
+    
+    -- italic A logo
+    local aLabel = Instance.new("TextLabel")
+    aLabel.Size = UDim2.new(0, 32, 1, 0)
+    aLabel.Position = UDim2.new(0, 12, 0, 0)
+    aLabel.BackgroundTransparency = 1
+    aLabel.TextColor3 = accentColor
+    aLabel.Font = Enum.Font.SourceSansBold
+    aLabel.TextSize = 26
+    aLabel.Text = "A"
+    aLabel.TextXAlignment = Enum.TextXAlignment.Center
+    aLabel.TextYAlignment = Enum.TextYAlignment.Center
+    aLabel.Rotation = -12
+    aLabel.Parent = frame
+    
+    -- separator function
+    local function createSeparator(xPos)
+        local sep = Instance.new("Frame")
+        sep.Size = UDim2.new(0, 2, 0, 24)
+        sep.Position = UDim2.new(0, xPos, 0, 8)
+        sep.BackgroundColor3 = accentColor
+        sep.BackgroundTransparency = 0.6
+        sep.BorderSizePixel = 0
+        sep.Parent = frame
+        return sep
+    end
+    
+    createSeparator(62)
+    createSeparator(174)
+    
+    -- fps label
+    local fpsLabel = Instance.new("TextLabel")
+    fpsLabel.Size = UDim2.new(0, 100, 1, 0)
+    fpsLabel.Position = UDim2.new(0, 70, 0, 0)
+    fpsLabel.BackgroundTransparency = 1
+    fpsLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
+    fpsLabel.Font = Enum.Font.SourceSans
+    fpsLabel.TextSize = 20
+    fpsLabel.TextXAlignment = Enum.TextXAlignment.Center
+    fpsLabel.TextYAlignment = Enum.TextYAlignment.Center
+    fpsLabel.Text = "FPS: 0"
+    fpsLabel.Parent = frame
+    
+    -- ping label
+    local pingLabel = Instance.new("TextLabel")
+    pingLabel.Size = UDim2.new(0, 80, 1, 0)
+    pingLabel.Position = UDim2.new(0, 200, 0, 0)
+    pingLabel.BackgroundTransparency = 1
+    pingLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
+    pingLabel.Font = Enum.Font.SourceSans
+    pingLabel.TextSize = 20
+    pingLabel.TextXAlignment = Enum.TextXAlignment.Center
+    pingLabel.TextYAlignment = Enum.TextYAlignment.Center
+    pingLabel.Text = "Ping: 0 ms"
+    pingLabel.Parent = frame
+    
+    -- fps counter
+    local fps = 0
+    local frameCount = 0
+    local lastTime = tick()
+    
+    RunService.RenderStepped:Connect(function()
+        frameCount = frameCount + 1
+        local now = tick()
+        if now - lastTime >= 1 then
+            fps = frameCount / (now - lastTime)
+            frameCount = 0
+            lastTime = now
+            fpsLabel.Text = string.format("FPS: %d", math.floor(fps))
+        end
+    end)
+    
+    -- ping updater
+    coroutine.wrap(function()
+        while true do
+            local ping = player:GetNetworkPing() * 1000
+            pingLabel.Text = string.format("Ping: %d ms", math.floor(ping))
+            wait(1)
+        end
+    end)()
+    
+    return frame
+end
 
 local function CreateESPObject(player)
     local espObject = {
@@ -567,7 +682,7 @@ local function AimAtTarget()
     local target = GetClosestPlayerToMouse()
     if not target or not target.Character then 
         if frameCounter % 120 == 0 then
-            DebugPrint("No target found")
+            --print("shit")
         end
         currentTarget = nil
         targetLockTime = 0
@@ -576,7 +691,7 @@ local function AimAtTarget()
 
     -- target
     if currentTarget ~= target then
-        DebugPrint("New target: " .. target.Name)
+        --new target
     end
 
     -- target consist
@@ -586,10 +701,10 @@ local function AimAtTarget()
     end
     
     -- aimbot set
-    if AimbotSettings.Mode == "Lock" then
-        LockAimAtTarget(target)
-    elseif AimbotSettings.Mode == "Legit" then
+    if AimbotSettings.Mode == "Legit" then
         LegitAimAtTarget(target)
+    elseif AimbotSettings.Mode == "Lock" then
+        LockAimAtTarget(target)
     end
 end
 
@@ -625,14 +740,6 @@ RunService.RenderStepped:Connect(function(deltaTime)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character:FindFirstChild("Humanoid") then
         local humanoid = LocalPlayer.Character.Humanoid
         local rootPart = LocalPlayer.Character.HumanoidRootPart
-
-        -- fly
-        if MiscSettings.Fly then
-            local cam = workspace.CurrentCamera
-            local cf = cam.CFrame
-            rootPart.CFrame = rootPart.CFrame + (cf.LookVector * (MiscSettings.FlySpeed * deltaTime))
-        end
-
         -- walkspeed
         humanoid.WalkSpeed = MiscSettings.WalkSpeed
     end
@@ -661,13 +768,6 @@ end)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character:FindFirstChild("Humanoid") then
         local humanoid = LocalPlayer.Character.Humanoid
         local rootPart = LocalPlayer.Character.HumanoidRootPart
-
-        -- cframe movement
-        if MiscSettings.Fly then
-            local cam = workspace.CurrentCamera
-            local cf = cam.CFrame
-            rootPart.CFrame = rootPart.CFrame + (cf.LookVector * (MiscSettings.FlySpeed * deltaTime))
-        end
 
         -- walksped
         humanoid.WalkSpeed = MiscSettings.WalkSpeed
@@ -966,6 +1066,16 @@ HealthBarESPSection:AddColorpicker("HealthBarESPColor", {
     Default = Color3.fromRGB(0, 255, 0),
     Callback = function(value)
         ESPSettings.HealthBarColor = value
+        ESPSettings.HealthTextColor = value  -- Add this line to sync health text color
+    end
+})
+
+-- Alternative: If you want separate controls, you can also add a separate health text color picker:
+HealthBarESPSection:AddColorpicker("HealthTextColor", {
+    Title = "Health Text Color", 
+    Default = Color3.fromRGB(255, 255, 255),
+    Callback = function(value)
+        ESPSettings.HealthTextColor = value
     end
 })
 
@@ -996,33 +1106,34 @@ SkeletonESPSection:AddColorpicker("SkeletonESPColor", {
 })
 
 -- misc
-local MovementSection = Tabs.Misc:AddSection("Movement")
+local NoSpreadSection = Tabs.Misc:AddSection("NoSpread")
 
-
-MovementSection:AddToggle("FlyToggle", {
-    Title = "Enable Fly",
+NoSpreadSection:AddToggle("NoSpreadToggle", {
+    Title = "NoSpread Toggle",
     Default = false,
     Callback = function(value)
-        MiscSettings.Fly = value
+        MiscSettings.NoSpread = value
     end
 })
 
-MovementSection:AddSlider("FlySpeedSlider", {
-    Title = "Fly Speed",
-    Default = 50,
-    Min = 10,
-    Max = 200,
+NoSpreadSection:AddSlider("NoSpreadPower", {
+    Title = "NoSpread Power (DOESNT WORK YET)",
+    Default = 80,
+    Min = 0,
+    Max = 100,
     Rounding = 0,
     Callback = function(value)
-        MiscSettings.FlySpeed = value
+        MiscSettings.NoSpreadPower = value
     end
 })
+
+local MovementSection = Tabs.Misc:AddSection("Movement")
 
 MovementSection:AddSlider("WalkSpeedSlider", {
     Title = "Walk Speed",
     Default = 16,
-    Min = 10,
-    Max = 100,
+    Min = 8,
+    Max = 300,
     Rounding = 0,
     Callback = function(value)
         MiscSettings.WalkSpeed = value
@@ -1030,17 +1141,6 @@ MovementSection:AddSlider("WalkSpeedSlider", {
         if char and char:FindFirstChild("Humanoid") then
             char.Humanoid.WalkSpeed = value
         end
-    end
-})
-
-MovementSection:AddSlider("InfJumpPowerSlider", {
-    Title = "Jump Power",
-    Default = 20,
-    Min = 5,
-    Max = 40,
-    Rounding = 0,
-    Callback = function(value)
-        MiscSettings.InfJumpPower = value
     end
 })
 
@@ -1053,27 +1153,29 @@ MovementSection:AddToggle("GlideToggle", {
 })
 
 -- world
-local statusBarToggle = Tabs.Modulation:AddToggle("StatusBarToggle", {
-    Title = "Show Status Bar",
-    Description = "Display FPS and ping information at the top of screen",
+local WatermarkSection = Tabs.Modulation:AddSection("Watermark")
+
+local WatermarkToggle = WatermarkSection:AddToggle("WatermarkToggle", {
+    Title = "Watermark",
+    Description = "gas watermark",
     Default = false,
 })
 
-statusBarToggle:OnChanged(function(val)
-    statusBarEnabled = val
+WatermarkToggle:OnChanged(function(val)
+    WatermarkEnabled = val
     if val then
-        if not statusBarFrame then
-            statusBarFrame = CreateStatusBar()
+        if not WatermarkFrame then
+            WatermarkFrame = CreateWatermark()
         end
-        statusBarFrame.Visible = true
+        WatermarkFrame.Visible = true
     else
-        if statusBarFrame then
-            statusBarFrame.Visible = false
+        if WatermarkFrame then
+            WatermarkFrame.Visible = false
         end
     end
 end)
 
-local WorldSection = Tabs.World:AddSection("Atmosphere")
+local WorldSection = Tabs.Modulation:AddSection("Atmosphere")
 
 WorldSection:AddToggle("CustomAtmosphereToggle", {
     Title = "Custom Atmosphere",
@@ -1083,7 +1185,7 @@ WorldSection:AddToggle("CustomAtmosphereToggle", {
     end
 })
 
-local BrightnessSection = Tabs.World:AddSection("Brightness")
+local BrightnessSection = Tabs.Modulation:AddSection("Brightness")
 
 BrightnessSection:AddToggle("BrightnessToggle", {
     Title = "Custom Brightness",
@@ -1120,7 +1222,7 @@ BrightnessSection:AddColorpicker("OutdoorAmbientColor", {
     end
 })
 
-local FogSection = Tabs.World:AddSection("Fog")
+local FogSection = Tabs.Modulation:AddSection("Fog")
 
 FogSection:AddToggle("FogToggle", {
     Title = "Custom Fog",
@@ -1160,27 +1262,26 @@ FogSection:AddSlider("FogEndSlider", {
     end
 })
 
-
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
-    if input.KeyCode == Enum.KeyCode.T then -- T test
-        print("=== AIMBOT DEBUG TEST ===")
-        print("Aimbot Enabled:", AimbotSettings.Enabled)
-        print("Aimbot Mode:", AimbotSettings.Mode)
-        print("FOV Size:", AimbotSettings.FOVSize)
-        print("Distance Cap:", AimbotSettings.DistanceCap)
-        print("Target Part:", AimbotSettings.TargetPart)
-        print("Key:", AimbotSettings.Key)
+    --if input.KeyCode == Enum.KeyCode.T then -- T test
+    --    print("=== AIMBOT DEBUG TEST ===")
+    --    print("Aimbot Enabled:", AimbotSettings.Enabled)
+    --    print("Aimbot Mode:", AimbotSettings.Mode)
+    --    print("FOV Size:", AimbotSettings.FOVSize)
+    --    print("Distance Cap:", AimbotSettings.DistanceCap)
+    --    print("Target Part:", AimbotSettings.TargetPart)
+    --    print("Key:", AimbotSettings.Key)
         
         local playersFound = 0
         for _, player in pairs(Players:GetPlayers()) do
             if player ~= LocalPlayer then
                 playersFound = playersFound + 1
-                print("Player found:", player.Name, "Alive:", IsAlive(player))
+                --print("Player found:", player.Name, "Alive:", IsAlive(player))
             end
         end
-        print("Total other players:", playersFound)
+        --print("Total other players:", playersFound)
         
         -- test
         --local target = GetClosestPlayerToMouse()
@@ -1189,7 +1290,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         --else
         --    print("No target found in FOV/range")
         --end
-    end
 end)
 
 SaveManager:SetLibrary(Fluent)
@@ -1233,118 +1333,6 @@ game:GetService(coregui).ChildRemoved:Connect(function(child)
         cleanupScriptBeforeClosing()
     end
 end)
-
-local function CreateStatusBar()
-    local RunService = game:GetService("RunService")
-    local Players = game:GetService("Players")
-    local player = Players.LocalPlayer
-    local playerGui = player:WaitForChild("PlayerGui")
-    
-    -- screen gui
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "StatusBar"
-    screenGui.ResetOnSpawn = false
-    screenGui.Parent = playerGui
-    
-    -- main frame
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 320, 0, 40)
-    frame.Position = UDim2.new(0.5, 0.5, 0, 5) -- top center
-    frame.AnchorPoint = Vector2.new(0.5, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    frame.BackgroundTransparency = 0.3
-    frame.BorderSizePixel = 0
-    frame.Parent = screenGui
-    
-    -- rounded corners
-    local uiCorner = Instance.new("UICorner")
-    uiCorner.CornerRadius = UDim.new(0, 8)
-    uiCorner.Parent = frame
-    
-    local accentColor = Color3.fromRGB(240, 240, 255)
-    
-    -- italic A logo
-    local aLabel = Instance.new("TextLabel")
-    aLabel.Size = UDim2.new(0, 32, 1, 0)
-    aLabel.Position = UDim2.new(0, 12, 0, 0)
-    aLabel.BackgroundTransparency = 1
-    aLabel.TextColor3 = accentColor
-    aLabel.Font = Enum.Font.SourceSansBold
-    aLabel.TextSize = 26
-    aLabel.Text = "A"
-    aLabel.TextXAlignment = Enum.TextXAlignment.Center
-    aLabel.TextYAlignment = Enum.TextYAlignment.Center
-    aLabel.Rotation = -12
-    aLabel.Parent = frame
-    
-    -- separator function
-    local function createSeparator(xPos)
-        local sep = Instance.new("Frame")
-        sep.Size = UDim2.new(0, 2, 0, 24)
-        sep.Position = UDim2.new(0, xPos, 0, 8)
-        sep.BackgroundColor3 = accentColor
-        sep.BackgroundTransparency = 0.6
-        sep.BorderSizePixel = 0
-        sep.Parent = frame
-        return sep
-    end
-    
-    createSeparator(62)
-    createSeparator(174)
-    
-    -- fps label
-    local fpsLabel = Instance.new("TextLabel")
-    fpsLabel.Size = UDim2.new(0, 100, 1, 0)
-    fpsLabel.Position = UDim2.new(0, 70, 0, 0)
-    fpsLabel.BackgroundTransparency = 1
-    fpsLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
-    fpsLabel.Font = Enum.Font.SourceSans
-    fpsLabel.TextSize = 20
-    fpsLabel.TextXAlignment = Enum.TextXAlignment.Center
-    fpsLabel.TextYAlignment = Enum.TextYAlignment.Center
-    fpsLabel.Text = "FPS: 0"
-    fpsLabel.Parent = frame
-    
-    -- ping label
-    local pingLabel = Instance.new("TextLabel")
-    pingLabel.Size = UDim2.new(0, 80, 1, 0)
-    pingLabel.Position = UDim2.new(0, 200, 0, 0)
-    pingLabel.BackgroundTransparency = 1
-    pingLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
-    pingLabel.Font = Enum.Font.SourceSans
-    pingLabel.TextSize = 20
-    pingLabel.TextXAlignment = Enum.TextXAlignment.Center
-    pingLabel.TextYAlignment = Enum.TextYAlignment.Center
-    pingLabel.Text = "Ping: 0 ms"
-    pingLabel.Parent = frame
-    
-    -- fps counter
-    local fps = 0
-    local frameCount = 0
-    local lastTime = tick()
-    
-    RunService.RenderStepped:Connect(function()
-        frameCount = frameCount + 1
-        local now = tick()
-        if now - lastTime >= 1 then
-            fps = frameCount / (now - lastTime)
-            frameCount = 0
-            lastTime = now
-            fpsLabel.Text = string.format("FPS: %d", math.floor(fps))
-        end
-    end)
-    
-    -- ping updater
-    coroutine.wrap(function()
-        while true do
-            local ping = player:GetNetworkPing() * 1000
-            pingLabel.Text = string.format("Ping: %d ms", math.floor(ping))
-            wait(1)
-        end
-    end)()
-    
-    return frame
-end
 
 Fluent:Notify({
     Title = "Acid",
