@@ -1295,11 +1295,11 @@ SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
 
 
-SaveManager:SetFolder("AR2ScriptSaves")
+SaveManager:SetFolder("AcidHub")
 SaveManager:BuildConfigSection(Tabs.Misc)
 
 
-InterfaceManager:SetFolder("AR2ScriptSettings")
+InterfaceManager:SetFolder("AcidHub/Dahood")
 InterfaceManager:BuildInterfaceSection(Tabs.Misc)
 
 
