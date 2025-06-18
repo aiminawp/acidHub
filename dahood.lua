@@ -1066,11 +1066,10 @@ HealthBarESPSection:AddColorpicker("HealthBarESPColor", {
     Default = Color3.fromRGB(0, 255, 0),
     Callback = function(value)
         ESPSettings.HealthBarColor = value
-        ESPSettings.HealthTextColor = value  -- Add this line to sync health text color
+        ESPSettings.HealthTextColor = value
     end
 })
 
--- Alternative: If you want separate controls, you can also add a separate health text color picker:
 HealthBarESPSection:AddColorpicker("HealthTextColor", {
     Title = "Health Text Color", 
     Default = Color3.fromRGB(255, 255, 255),
