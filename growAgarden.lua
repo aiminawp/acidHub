@@ -3,8 +3,9 @@ local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/d
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 local walkingRageAutoPlant = false
 local autoBuy = false
+local antiAfk = false
 local autoFarm = false
-local autoFarmMode = ""
+local autoFarmMode = "Rage"
 local autoFarmInterval = 0.03
 local selectedBuyFruits = {}
 local selectedHoneyItems = {}
@@ -18,7 +19,7 @@ local autoSell = false
 local sellInterval = 20
 local autoCollect = false
 local autoCollectMode = ""
-local autoCollectInterval = 1
+local autoCollectInterval = 0.1
 local autoCollectRange = 13
 local selectedCollectFruits = {}
 local selectedCollectMiscFruits = {}
@@ -650,6 +651,11 @@ local function sellInventory()
     Lplr.Character:MoveTo(workspace.NPCS.Steven.PrimaryPart.Position)
     repeat task.wait(.15) until Lplr.Character.Head.Position ~= oldpos
     game:GetService("ReplicatedStorage"):WaitForChild("GameEvents"):WaitForChild("Sell_Inventory"):FireServer()
+    wait(0.15)
+    game:GetService("ReplicatedStorage"):WaitForChild("GameEvents"):WaitForChild("Sell_Inventory"):FireServer()
+    wait(0.15)
+    game:GetService("ReplicatedStorage"):WaitForChild("GameEvents"):WaitForChild("Sell_Inventory"):FireServer()
+    wait(0.15)
     Lplr.Character:MoveTo(oldpos)
     print("[AutoSell] Sold all fruit in ",tick()-start, "seconds")
     Fluent:Notify({
@@ -801,6 +807,53 @@ local statusBarToggle = Tabs.Modulation:AddToggle("StatusBarToggle", {
     Default = false,
 })
 
+
+local themeColors = {
+    Dark = Color3.fromRGB(40, 40, 40),
+    Darker = Color3.fromRGB(20, 20, 20),
+    Amoled = Color3.fromRGB(0, 0, 0),
+    Light = Color3.fromRGB(240, 240, 240),
+    Balloon = Color3.fromRGB(218, 239, 255),
+    SoftCream = Color3.fromRGB(248, 238, 214),
+    Aqua = Color3.fromRGB(25, 90, 103),
+    Amethyst = Color3.fromRGB(40, 21, 62),
+    Rose = Color3.fromRGB(56, 28, 42),
+    Midnight = Color3.fromRGB(11, 11, 36),
+    Forest = Color3.fromRGB(22, 38, 27),
+    Sunset = Color3.fromRGB(54, 30, 23),
+    Ocean = Color3.fromRGB(19, 27, 44),
+    Emerald = Color3.fromRGB(22, 47, 40),
+    Sapphire = Color3.fromRGB(13, 24, 61),
+    Cloud = Color3.fromRGB(23, 61, 75),
+    Grape = Color3.fromRGB(12, 6, 24),
+}
+
+Tabs.Modulation:AddDropdown("ThemeSelector", {
+    Title = "Status Bar Theme",
+    Description = "Choose the background color theme for the status bar",
+    Values = {"Dark", "Darker", "Amoled", "Light", "Balloon", "SoftCream", "Aqua", "Amethyst", "Rose", "Midnight", "Forest", "Sunset", "Ocean", "Emerald", "Sapphire", "Cloud", "Grape"},
+    Multi = false,
+    Default = "Dark",
+}):OnChanged(function(themeName)
+    if statusBarFrame and themeColors[themeName] then
+        local color = themeColors[themeName]
+        statusBarFrame.BackgroundColor3 = color
+        if themeName == "Light" or themeName == "SoftCream" or themeName == "Balloon" then
+            for _, child in ipairs(statusBarFrame:GetChildren()) do
+                if child:IsA("TextLabel") then
+                    child.TextColor3 = Color3.fromRGB(0, 0, 0)
+                end
+            end
+        else
+            for _, child in ipairs(statusBarFrame:GetChildren()) do
+                if child:IsA("TextLabel") then
+                    child.TextColor3 = Color3.fromRGB(230, 230, 230)
+                end
+            end
+        end
+    end
+end)
+
 statusBarToggle:OnChanged(function(val)
     statusBarEnabled = val
     if val then
@@ -814,6 +867,48 @@ statusBarToggle:OnChanged(function(val)
         end
     end
 end)
+Tabs.Modulation:AddSlider("StatusBarTransparency", {
+    Title = "Status Bar Transparency",
+    Description = "Adjust the background transparency of the status bar",
+    Min = 0,
+    Max = 1,
+    Default = 0.3,
+    Rounding = 2,
+    Callback = function(val)
+        if statusBarFrame then
+            statusBarFrame.BackgroundTransparency = val
+        end
+    end,
+})
+
+
+Tabs.Modulation:AddSlider("StatusBarPosX", {
+    Title = "Status Bar X Position",
+    Description = "Adjust the horizontal (X) position of the status bar",
+    Min = -800,
+    Max = 800,
+    Default = 0,
+    Rounding = 0,
+    Callback = function(xOffset)
+        if statusBarFrame then
+            statusBarFrame.Position = UDim2.new(0.5, xOffset, statusBarFrame.Position.Y.Scale, statusBarFrame.Position.Y.Offset)
+        end
+    end,
+})
+
+Tabs.Modulation:AddSlider("StatusBarPosY", {
+    Title = "Status Bar Y Position",
+    Description = "Adjust the vertical (Y) position of the status bar",
+    Min = -61,
+    Max = 921,
+    Default = 5,
+    Rounding = 0,
+    Callback = function(yOffset)
+        if statusBarFrame then
+            statusBarFrame.Position = UDim2.new(statusBarFrame.Position.X.Scale, statusBarFrame.Position.X.Offset, 0, yOffset)
+        end
+    end,
+})
 
 Tabs.Modulation:AddSlider("BrightnessSlider", {
     Title = "World Brightness",
@@ -1004,12 +1099,12 @@ Tabs.AutoCollect:AddParagraph({
 
 Tabs.Credits:AddParagraph({
         Title = "Soma",
-        Content = "Improved Rage Autofarm, Sell Inventory and made the best autocollect i`ve seen"
+        Content = "soma1100"
 })
 
 Tabs.Credits:AddParagraph({
-        Title = "Klyte",
-        Content = "Most of the legit features and the base script"
+        Title = "klyte",
+        Content = "_klyte_"
 })
 -- af
 local afToggle = Tabs.AutoFarm:AddToggle("AutoFarmToggle", {
@@ -1019,6 +1114,15 @@ local afToggle = Tabs.AutoFarm:AddToggle("AutoFarmToggle", {
 
 afToggle:OnChanged(function(val)
     autoFarm = val
+end)
+
+local antiafkToggle = Tabs.AutoFarm:AddToggle("AutoFarmToggle", {
+    Title = "AntiAfk",
+    Default = false,
+})
+
+antiafkToggle:OnChanged(function(val)
+    antiAfk = val
 end)
 
 local afMode = Tabs.AutoFarm:AddDropdown("AFMode", {
@@ -1052,8 +1156,8 @@ Tabs.AutoCollect:AddSlider("CollectRange", {
     Title = "Range",
     Min = 1,
     Max = 36,
-    Default = 20,
-    Rounding = 1,
+    Default = 24,
+    Rounding = 0,
     Callback = function(val)
         autoCollectRange = val
     end
@@ -1062,7 +1166,7 @@ Tabs.AutoCollect:AddSlider("CollectRange", {
 Tabs.AutoCollect:AddSlider("CollectInterval", {
     Title = "Interval",
     Min = 0.01,
-    Max = 5.0,
+    Max = 1.5,
     Default = 0.1,
     Rounding = 1,
     Callback = function(val)
@@ -1292,8 +1396,6 @@ local gearSelector = Tabs.AutoBuy:AddDropdown("GearSelector", {
     Default = {},
 })
 
-gearSelector:SetValue({})
-
 gearSelector:OnChanged(function(selection)
     selectedGearItems = {}
     for gearItem, enabled in pairs(selection) do
@@ -1351,8 +1453,8 @@ SaveManager:SetLibrary(Fluent)
 InterfaceManager:SetLibrary(Fluent)
 SaveManager:IgnoreThemeSettings()
 SaveManager:SetIgnoreIndexes({})
-InterfaceManager:SetFolder("AcidHub")
-SaveManager:SetFolder("AcidHub/GrowAGarden")
+InterfaceManager:SetFolder("FluentScriptHub")
+SaveManager:SetFolder("FluentScriptHub/specific-game")
 InterfaceManager:BuildInterfaceSection(Tabs.Settings)
 SaveManager:BuildConfigSection(Tabs.Settings)
 
@@ -1473,6 +1575,21 @@ task.spawn(function()
         if Fluent.Unloaded then break end
     end
 end)
+
+local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+
+Players.LocalPlayer.Idled:Connect(function()
+	if antiAfk then
+		local VirtualUser = game:GetService('VirtualUser')
+ 
+        game:GetService('Players').LocalPlayer.Idled:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
+	end
+end)
+
 -- balkan rage
 task.spawn(function()
     while true do
@@ -1550,48 +1667,75 @@ task.spawn(function()
     end
     
     local function legitCollect()
+        local Players = game:GetService("Players")
+        local player = Players.LocalPlayer
         local char = player.Character or player.CharacterAdded:Wait()
         local hrp = char:WaitForChild("HumanoidRootPart")
-
         for _, farm in ipairs(workspace:WaitForChild("Farm"):GetChildren()) do
-            local success, err = pcall(function()
-                local importantFolder = farm:FindFirstChild("Important")
-                if importantFolder and importantFolder:FindFirstChild("Plants_Physical") then
-                    local plantsFolder = importantFolder:FindFirstChild("Plants_Physical")
+                --print("[AutoCollect] Scanning farm:", farm.Name)
 
-                    for _, plant in ipairs(plantsFolder:GetChildren()) do
-                        local plantName = plant.Name
-                        local isRegularFruit = table.find(selectedCollectFruits, plantName)
-                        local isMiscFruit = table.find(selectedCollectMiscFruits, plantName)
-                        
-                        if isRegularFruit or isMiscFruit then
-                            local prompt = nil
+                local success, err = pcall(function()
+                    local importantFolder = farm:FindFirstChild("Important")
+                    if importantFolder and importantFolder:FindFirstChild("Plants_Physical") then
+                        local plantsFolder = importantFolder:FindFirstChild("Plants_Physical")
+
+                        for _, plant in ipairs(plantsFolder:GetChildren()) do
+                            local plantName = plant.Name
+                            local isRegularFruit = table.find(selectedCollectFruits, plantName)
+                            local isMiscFruit = table.find(selectedCollectMiscFruits, plantName)
                             
-                            if isMiscFruit and customPromptPaths2[plantName] then
-                                prompt = customPromptPaths2[plantName](plant)
-                            elseif customPromptPaths[plantName] then
-                                prompt = customPromptPaths[plantName](plant)
-                            else
-                                local fruits = plant:FindFirstChild("Fruits")
-                                local named = fruits and fruits:FindFirstChild(plantName)
-                                local fruit1 = named and named:FindFirstChild("1")
-                                prompt = fruit1 and fruit1:FindFirstChildOfClass("ProximityPrompt")
-                            end
+                            if isRegularFruit or isMiscFruit then
+                                --print("[AutoCollect] Found matching plant:", plantName, isMiscFruit and "(Misc)" or "(Regular)")
 
-                            if prompt then
-                                local distance = (hrp.Position - prompt.Parent.Position).Magnitude
-                                if distance <= tonumber(autoCollectRange) then
-                                    fireproxilityprompt(prompt, 1)
-                                    wait(0.1)
+                                local prompt = nil
+                                
+                                -- misc fruit ig
+                                if isMiscFruit and customPromptPaths2[plantName] then
+                                    prompt = customPromptPaths2[plantName](plant)
+                                    --print("[AutoCollect] Using customPromptPaths2 for", plantName)
+                                -- cstomPromptpaths
+                                elseif customPromptPaths[plantName] then
+                                    prompt = customPromptPaths[plantName](plant)
+                                    --print("[AutoCollect] Using customPromptPaths for", plantName)
+                                else
+                                    local fruits = plant:FindFirstChild("Fruits")
+                                    local named = fruits and fruits:FindFirstChild(plantName)
+                                    local fruit1 = named and named:FindFirstChild("1")
+                                    prompt = fruit1 and fruit1:FindFirstChildOfClass("ProximityPrompt")
+                                    --print("[AutoCollect] Using default prompt path for", plantName)
+                                end
+
+                                if prompt then
+                                    local distance = (hrp.Position - prompt.Parent.Position).Magnitude
+                                    --print(("[AutoCollect] Distance to %s = %.2f studs"):format(plantName, distance))
+
+                                    if distance <= tonumber(autoCollectRange) then
+                                        --print(("[AutoCollect:%s] Firing prompt for %s"):format(autoCollectMode, plantName))
+                                        fireproximityprompt(prompt, 1)
+                                        
+                                        -- ddeelay
+                                        if autoCollectMode == "Legit" then
+                                            wait(autoCollectInterval)
+                                        end
+                                    else
+                                        --print(("[AutoCollect:%s] Skipped %s, out of range (%.2f > %.2f)"):format(
+                                        --    autoCollectMode, plantName, distance, autoCollectRange))
+                                    end
+                                else
+                                    --print("[AutoCollect] Prompt not found for", plantName)
                                 end
                             end
                         end
+                    else
+                        --print("[AutoCollect] Missing Important or Plants_Physical in", farm.Name)
                     end
-                end
-            end)
-        end
-    end
+                end)
 
+                if not success then
+                    warn("[AutoCollect] Error processing", farm.Name, "=>", err)
+                end
+            end
+        end
     while true do
         if autoCollect and (#selectedCollectFruits > 0 or #selectedCollectMiscFruits > 0) then
             if autoCollectMode == "Rage" then
