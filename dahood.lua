@@ -16,14 +16,36 @@ local lastAimUpdate = 0
 local WatermarkEnabled = false
 local WatermarkFrame = nil
 
+local quotes = {
+    " - BobDaHacker",
+    " - Cultivating unemployment",
+    " - builder.ai skid 2025 no way",
+    " - Probably gonna get banned lol",
+    " - Touching grass is overrated anyway",
+    " - WARNING: May cause vitamin D deficiency",
+    " - Now with 50% more spaghetti code",
+    " - Breaking tos since 1900 BC",
+    " - Trust me bro, it's legit",
+    " - Speedrunning a ban any%",
+    " - Warning: Side effects may include skill issues",
+    " - Probably violating several laws of physics",
+    " - Why wda_excludefromcapture not work???"
+}
+
+local function getRandomQuote()
+    local randomIndex = math.random(1, #quotes)
+    return quotes[randomIndex]
+end
+
+local randomQuote = getRandomQuote()
+
 local Window = Fluent:CreateWindow({
-    Title = "Acid",
-    SubTitle = "v1.2",
+    Title = "Acid " .. randomQuote,
     TabWidth = 160,
-    Size = UDim2.fromOffset(780, 460),
-    Acrylic = true,
+    Size = UDim2.fromOffset(720, 460),
+    Acrylic = false,
     Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.RightControl
+    MinimizeKey = Enum.KeyCode.RightShift,
 })
 
 local Tabs = {
@@ -169,7 +191,6 @@ local function GetDistanceFromCharacter(position)
     if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return math.huge end
     return (LocalPlayer.Character.HumanoidRootPart.Position - position).Magnitude
 end
-
 
 local function GetClosestPlayerToMouse()
     if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then 
@@ -763,55 +784,6 @@ RunService.RenderStepped:Connect(function(deltaTime)
         lastWorldUpdate = currentTime
     end
 end)
-    
-    -- movement
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        local humanoid = LocalPlayer.Character.Humanoid
-        local rootPart = LocalPlayer.Character.HumanoidRootPart
-
-        -- walksped
-        humanoid.WalkSpeed = MiscSettings.WalkSpeed
-    end
-
-    -- world
-    if WorldSettings.CustomAtmosphere and currentTime - lastWorldUpdate > 0.1 then
-        local lighting = game:GetService("Lighting")
-        
-        if WorldSettings.BrightEnabled then
-            lighting.Brightness = WorldSettings.Brightness
-            lighting.Ambient = WorldSettings.Ambient
-            lighting.OutdoorAmbient = WorldSettings.OutdoorAmbient
-        end
-        
-        if WorldSettings.FogEnabled then
-            lighting.FogStart = WorldSettings.FogStart
-            lighting.FogEnd = WorldSettings.FogEnd
-            lighting.FogColor = WorldSettings.FogColor
-        end
-        
-        lastWorldUpdate = currentTime
-    end
-
-
-    
-    -- world
-    if WorldSettings.CustomAtmosphere and currentTime - lastWorldUpdate > 0.1 then
-        local lighting = game:GetService("Lighting")
-        
-        if WorldSettings.BrightEnabled then
-            lighting.Brightness = WorldSettings.Brightness
-            lighting.Ambient = WorldSettings.Ambient
-            lighting.OutdoorAmbient = WorldSettings.OutdoorAmbient
-        end
-        
-        if WorldSettings.FogEnabled then
-            lighting.FogStart = WorldSettings.FogStart
-            lighting.FogEnd = WorldSettings.FogEnd
-            lighting.FogColor = WorldSettings.FogColor
-        end
-        
-        lastWorldUpdate = currentTime
-    end
 
 -- ui
 local AimSection = Tabs.Aim:AddSection("Aimbot")
@@ -1152,16 +1124,62 @@ MovementSection:AddToggle("GlideToggle", {
 })
 
 -- world
-local WatermarkSection = Tabs.Modulation:AddSection("Watermark")
+-- Status Bar Section
+local StatusBarSection = Tabs.Modulation:AddSection("Status Bar")
 
-local WatermarkToggle = WatermarkSection:AddToggle("WatermarkToggle", {
-    Title = "Watermark",
-    Description = "gas watermark",
+local themeColors = {
+    Dark = Color3.fromRGB(40, 40, 40),
+    Darker = Color3.fromRGB(20, 20, 20),
+    Amoled = Color3.fromRGB(0, 0, 0),
+    Light = Color3.fromRGB(240, 240, 240),
+    Balloon = Color3.fromRGB(218, 239, 255),
+    SoftCream = Color3.fromRGB(248, 238, 214),
+    Aqua = Color3.fromRGB(25, 90, 103),
+    Amethyst = Color3.fromRGB(40, 21, 62),
+    Rose = Color3.fromRGB(56, 28, 42),
+    Midnight = Color3.fromRGB(11, 11, 36),
+    Forest = Color3.fromRGB(22, 38, 27),
+    Sunset = Color3.fromRGB(54, 30, 23),
+    Ocean = Color3.fromRGB(19, 27, 44),
+    Emerald = Color3.fromRGB(22, 47, 40),
+    Sapphire = Color3.fromRGB(13, 24, 61),
+    Cloud = Color3.fromRGB(23, 61, 75),
+    Grape = Color3.fromRGB(12, 6, 24),
+}
+
+local statusBarToggle = StatusBarSection:AddToggle("StatusBarToggle", {
+    Title = "Show Status Bar",
+    Description = "Display FPS and ping information at the top of screen",
     Default = false,
 })
 
-WatermarkToggle:OnChanged(function(val)
-    WatermarkEnabled = val
+StatusBarSection:AddDropdown("ThemeSelector", {
+    Title = "Status Bar Theme",
+    Description = "Choose the background color theme for the status bar",
+    Values = {"Dark", "Darker", "Amoled", "Light", "Balloon", "SoftCream", "Aqua", "Amethyst", "Rose", "Midnight", "Forest", "Sunset", "Ocean", "Emerald", "Sapphire", "Cloud", "Grape"},
+    Multi = false,
+    Default = "Dark",
+}):OnChanged(function(themeName)
+    if WatermarkFrame and themeColors[themeName] then
+        local color = themeColors[themeName]
+        WatermarkFrame.BackgroundColor3 = color
+        
+        -- Set text color based on theme
+        local textColor = Color3.fromRGB(230, 230, 230) -- Default white text
+        if themeName == "Light" or themeName == "SoftCream" or themeName == "Balloon" then
+            textColor = Color3.fromRGB(0, 0, 0) -- Black text for light themes
+        end
+        
+        for _, child in ipairs(WatermarkFrame:GetChildren()) do
+            if child:IsA("TextLabel") then
+                child.TextColor3 = textColor
+            end
+        end
+    end
+end)
+
+statusBarToggle:OnChanged(function(val)
+    statusBarEnabled = val
     if val then
         if not WatermarkFrame then
             WatermarkFrame = CreateWatermark()
@@ -1174,6 +1192,47 @@ WatermarkToggle:OnChanged(function(val)
     end
 end)
 
+StatusBarSection:AddSlider("StatusBarTransparency", {
+    Title = "Status Bar Transparency",
+    Description = "Adjust the background transparency of the status bar",
+    Min = 0,
+    Max = 1,
+    Default = 0.3,
+    Rounding = 2,
+    Callback = function(val)
+        if WatermarkFrame then
+            WatermarkFrame.BackgroundTransparency = val
+        end
+    end,
+})
+
+StatusBarSection:AddSlider("StatusBarPosX", {
+    Title = "Status Bar X Position",
+    Description = "Adjust the horizontal (X) position of the status bar",
+    Min = -800,
+    Max = 800,
+    Default = 0,
+    Rounding = 0,
+    Callback = function(xOffset)
+        if WatermarkFrame then
+            WatermarkFrame.Position = UDim2.new(0.5, xOffset, WatermarkFrame.Position.Y.Scale, WatermarkFrame.Position.Y.Offset)
+        end
+    end,
+})
+
+StatusBarSection:AddSlider("StatusBarPosY", {
+    Title = "Status Bar Y Position",
+    Description = "Adjust the vertical (Y) position of the status bar",
+    Min = -61,
+    Max = 921,
+    Default = 5,
+    Rounding = 0,
+    Callback = function(yOffset)
+        if WatermarkFrame then
+            WatermarkFrame.Position = UDim2.new(WatermarkFrame.Position.X.Scale, WatermarkFrame.Position.X.Offset, 0, yOffset)
+        end
+    end,
+})
 local WorldSection = Tabs.Modulation:AddSection("Atmosphere")
 
 WorldSection:AddToggle("CustomAtmosphereToggle", {
