@@ -1179,7 +1179,7 @@ StatusBarSection:AddDropdown("ThemeSelector", {
 end)
 
 statusBarToggle:OnChanged(function(val)
-    statusBarEnabled = val
+    WatermarkEnabled = val
     if val then
         if not WatermarkFrame then
             WatermarkFrame = CreateWatermark()
@@ -1233,6 +1233,7 @@ StatusBarSection:AddSlider("StatusBarPosY", {
         end
     end,
 })
+
 local WorldSection = Tabs.Modulation:AddSection("Atmosphere")
 
 WorldSection:AddToggle("CustomAtmosphereToggle", {
@@ -1385,12 +1386,6 @@ local function cleanupScriptBeforeClosing()
     lighting.FogEnd = 100000
     lighting.FogColor = Color3.fromRGB(192, 192, 192)
 end
-
-game:GetService(coregui).ChildRemoved:Connect(function(child)
-    if child.Name == "ScreenGui" and child:FindFirstChild("Acid") then
-        cleanupScriptBeforeClosing()
-    end
-end)
 
 Fluent:Notify({
     Title = "Acid",
