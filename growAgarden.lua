@@ -953,8 +953,13 @@ Tabs.Modulation:AddButton({
     Title = "Reset All Lighting",
     Description = "Reset all lighting settings to original values",
     Callback = function()
+        game.Lighting.FogColor = originalFogColor
+        game.Lighting.FogStart = originalFogStart
+        game.Lighting.FogEnd = originalFogEnd
         game.Lighting.Brightness = originalBrightness
         game.Lighting.Ambient = originalAmbient
+        game.Lighting.ColorShift_Bottom = originalColorShift_Bottom
+        game.Lighting.ColorShift_Top = originalColorShift_Top
         
         local baseplate = workspace:FindFirstChild("TopBaseplate")
         if baseplate and originalFloorColor then
