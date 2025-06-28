@@ -9,5 +9,5 @@
 
 loader :
 ```
-loadstring(game:HttpGet("http://raw.githubusercontent.com/aiminawp/skbidid17t87steotatuTEST/main/main.lua))()
+loadstring(game:HttpGet("http://raw.githubusercontent.com/aiminawp/acidHub/main/main.lua))()
 ```
