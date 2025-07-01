@@ -7,7 +7,6 @@
 
 **Forsaken**
 
-kris
 loader :
 ```
 loadstring(game:HttpGet("http://raw.githubusercontent.com/aiminawp/acidHub/main/main.lua"))()
